@@ -4,6 +4,7 @@
 %bcond_with	verbose		# verbose build (V=1)
 %bcond_with	pae		# build PAE (HIGHMEM64G) support on uniprocessor
 %bcond_with	preempt-nort	# build preemptable no realtime kernel
+%bcond_with	pax		# build PaX
 
 %{?debug:%define with_verbose 1}
 
@@ -38,7 +39,11 @@
 %define		_oprofile_ver		0.9
 %define		_udev_ver		071
 
+%if %{with pax}
+%define		alt_kernel	bare-pax-grsecurity
+%else
 %define		alt_kernel	bare-grsecurity
+%endif
 
 %define		_basever	2.6.23
 %define		_postver	.1
@@ -78,8 +83,12 @@ Source3:	kernel-bare-grsecurity-config.h
 Source20:	kernel-bare-grsecurity-i386.config
 Source21:	kernel-bare-grsecurity-x86_64.config
 
+Source30:	kernel-bare-grsecurity-pax.config
+
 # from http://www.grsecurity.net/~spender/
 Patch100:	linux-2.6-grsecurity.patch
+# from squashfs: http://dl.sourceforge.net/sourceforge/squashfs/squashfs3.2-r2.tar.gz for linux-2.6.20
+Patch101:	squashfs3.2-patch
 
 URL:		http://www.kernel.org/
 BuildRequires:	binutils >= 3:2.14.90.0.7
@@ -384,6 +393,7 @@ Documentation.
 %endif
 
 %patch100 -p1
+%patch101 -p1
 
 # Fix EXTRAVERSION in main Makefile
 sed -i 's#EXTRAVERSION =.*#EXTRAVERSION = %{_postver}_%{alt_kernel}#g' Makefile
@@ -432,13 +442,25 @@ TuneUpConfigForIX86 () {
 %endif
 }
 
+PaXconfig () {
+	set -x
+	sed -i "s:# CONFIG_PAX is not set:CONFIG_PAX=y:" .config
+	%ifarch %{ix86}
+		sed -i 's:# CONFIG_PAX_SEGMEXEC is not set:CONFIG_PAX_SEGMEXEC=y:' $1
+	%endif
+	%ifarch %{ix8664}
+		sed -i 's:# CONFIG_PAX_MEMORY_UDEREF is not set:# CONFIG_PAX_MEMORY_UDEREF=y:' $1
+	%endif
+	return 0
+}
+
 rm -f .config
 BuildConfig() {
 	%{?debug:set -x}
 	Config="%{_target_base_arch}"
-	KernelVer=%{kernel_release}$1
+	KernelVer=%{kernel_release}
 
-	echo "Building config file [using $Config.conf] for KERNEL $1..."
+	echo "Building config file [using $Config.conf] for KERNEL ..."
 
 	echo "" > .config
 	cat $RPM_SOURCE_DIR/kernel-bare-grsecurity-$Config.config >> .config
@@ -450,6 +472,11 @@ BuildConfig() {
 		sed -i "s:CONFIG_PREEMPT_NONE=y:# CONFIG_PREEMPT_NONE is not set:" .config
 		sed -i "s:# CONFIG_PREEMPT is not set:CONFIG_PREEMPT=y:" .config
 		sed -i "s:# CONFIG_PREEMPT_BKL is not set:CONFIG_PREEMPT_BKL=y:" .config
+	%endif
+
+	%if %{with pax}
+		cat %{SOURCE30} >> .config
+		PaXconfig .config
 	%endif
 
 %{?debug:sed -i "s:# CONFIG_DEBUG_SLAB is not set:CONFIG_DEBUG_SLAB=y:" .config}
@@ -469,7 +496,7 @@ BuildConfig() {
 
 BuildKernel() {
 	%{?debug:set -x}
-	echo "Building kernel $1 ..."
+	echo "Building kernel ..."
 	%{__make} %{MakeOpts} mrproper \
 		RCS_FIND_IGNORE='-name build-done -prune -o'
 	install arch/%{_target_base_arch}/defconfig .config
