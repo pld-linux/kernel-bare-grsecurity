@@ -87,8 +87,10 @@ Source30:	kernel-bare-grsecurity-pax.config
 
 # from http://www.grsecurity.net/~spender/
 Patch100:	linux-2.6-grsecurity.patch
-# from squashfs: http://dl.sourceforge.net/sourceforge/squashfs/squashfs3.2-r2.tar.gz for linux-2.6.20
-Patch101:	squashfs3.2-patch
+# from squashfs: http://dl.sourceforge.net/sourceforge/squashfs/squashfs3.3.tar.gz for linux-2.6.23
+Patch101:	linux-2.6-squashfs.patch
+# official vendor driver for Marvell Yukon gigabit adapters, v10.22.4.3
+Patch102:	linux-2.6-sk98lin.patch
 
 URL:		http://www.kernel.org/
 BuildRequires:	binutils >= 3:2.14.90.0.7
@@ -394,6 +396,7 @@ Documentation.
 
 %patch100 -p1
 %patch101 -p1
+%patch102 -p1
 
 # Fix EXTRAVERSION in main Makefile
 sed -i 's#EXTRAVERSION =.*#EXTRAVERSION = %{_postver}_%{alt_kernel}#g' Makefile
