@@ -3,7 +3,7 @@
 %bcond_without	source		# don't build kernel-source package
 %bcond_with	verbose		# verbose build (V=1)
 %bcond_with	pae		# build PAE (HIGHMEM64G) support on uniprocessor
-%bcond_with	preempt-nort	# build preemptable no realtime kernel
+%bcond_with	preempt		# build preemptable no realtime kernel
 %bcond_with	pax		# build PaX
 
 %{?debug:%define with_verbose 1}
@@ -443,7 +443,6 @@ TuneUpConfigForIX86 () {
 }
 
 PaXconfig () {
-	set -x
 	sed -i "s:# CONFIG_PAX is not set:CONFIG_PAX=y:" .config
 	%ifarch %{ix86}
 		sed -i 's:# CONFIG_PAX_SEGMEXEC is not set:CONFIG_PAX_SEGMEXEC=y:' $1
@@ -468,7 +467,8 @@ BuildConfig() {
 
 	TuneUpConfigForIX86 .config
 
-	%if %{with preempt-nort}
+	%if %{with preempt}
+		echo "# CONFIG_DEBUG_PREEMPT is not set" >> .config
 		sed -i "s:CONFIG_PREEMPT_NONE=y:# CONFIG_PREEMPT_NONE is not set:" .config
 		sed -i "s:# CONFIG_PREEMPT is not set:CONFIG_PREEMPT=y:" .config
 		sed -i "s:# CONFIG_PREEMPT_BKL is not set:CONFIG_PREEMPT_BKL=y:" .config
