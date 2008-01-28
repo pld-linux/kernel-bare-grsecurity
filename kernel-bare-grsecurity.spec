@@ -80,7 +80,7 @@ Source10:	http://www.kernel.org/pub/linux/kernel/v2.6/testing/patch-%{_ver}-%{_r
 Source2:	kernel-bare-grsecurity-module-build.pl
 Source3:	kernel-bare-grsecurity-config.h
 
-Source20:	kernel-bare-grsecurity-i386.config
+Source20:	kernel-bare-grsecurity-x86.config
 Source21:	kernel-bare-grsecurity-x86_64.config
 
 Source30:	kernel-bare-grsecurity-pax.config
