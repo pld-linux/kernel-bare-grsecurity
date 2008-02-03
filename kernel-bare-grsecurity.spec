@@ -47,7 +47,7 @@
 
 %define		_basever	2.6.23
 %define		_postver	.14
-%define		_rel		2
+%define		_rel		3
 
 # for rc kernels basever is the version patch (source1) should be applied to
 #%define		_ver		2.6.20
@@ -459,7 +459,11 @@ PaXconfig () {
 rm -f .config
 BuildConfig() {
 	%{?debug:set -x}
+%ifarch %{ix86}
+	Config="x86"
+%else
 	Config="%{_target_base_arch}"
+%endif
 	KernelVer=%{kernel_release}
 
 	echo "Building config file [using $Config.conf] for KERNEL ..."
@@ -515,7 +519,11 @@ BuildKernel() {
 }
 
 PreInstallKernel() {
+%ifarch %{ix86}
+	Config="x86"
+%else
 	Config="%{_target_base_arch}"
+%endif
 	KernelVer=%{kernel_release}
 
 	mkdir -p $KERNEL_INSTALL_DIR/boot
