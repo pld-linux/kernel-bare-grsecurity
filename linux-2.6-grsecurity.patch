@@ -11412,18 +11412,6 @@ diff -urNp linux-2.6.23.9/drivers/acpi/blacklist.c linux-2.6.23.9/drivers/acpi/b
  };
  
  #if	CONFIG_ACPI_BLACKLIST_YEAR
-diff -urNp linux-2.6.23.9/drivers/acpi/osl.c linux-2.6.23.9/drivers/acpi/osl.c
---- linux-2.6.23.9/drivers/acpi/osl.c	2007-11-26 12:51:43.000000000 -0500
-+++ linux-2.6.23.9/drivers/acpi/osl.c	2007-12-03 10:05:51.000000000 -0500
-@@ -1233,7 +1233,7 @@ static struct dmi_system_id acpi_osl_dmi
- 		     DMI_MATCH(DMI_BOARD_NAME, "MPAD-MSAE Customer Reference Boards"),
- 		     },
- 	 },
--	{}
-+	{ NULL, NULL, {DMI_MATCH(DMI_NONE, NULL)}, NULL}
- };
- #endif /* CONFIG_DMI */
- 
 diff -urNp linux-2.6.23.9/drivers/acpi/processor_core.c linux-2.6.23.9/drivers/acpi/processor_core.c
 --- linux-2.6.23.9/drivers/acpi/processor_core.c	2007-11-26 12:51:43.000000000 -0500
 +++ linux-2.6.23.9/drivers/acpi/processor_core.c	2007-12-03 10:05:51.000000000 -0500
@@ -33205,11 +33193,10 @@ diff -urNp linux-2.6.23.9/mm/mmap.c linux-2.6.23.9/mm/mmap.c
  
  	/*
  	 * We must make sure the anon_vma is allocated
-@@ -1619,6 +1828,16 @@ static inline int expand_downwards(struc
- 	 */
- 	if (unlikely(anon_vma_prepare(vma)))
- 		return -ENOMEM;
-+
+@@ -1619,6 +1828,15 @@ static inline int expand_downwards(struc
+ 	if (error)
+ 		return error;
+ 
 +#if defined(CONFIG_STACK_GROWSUP) || defined(CONFIG_IA64)
 +	find_vma_prev(address, &prev);
 +	lockprev = prev && (prev->vm_flags & VM_GROWSUP);
@@ -33710,7 +33697,7 @@ diff -urNp linux-2.6.23.9/mm/mmap.c linux-2.6.23.9/mm/mmap.c
 +	}
 +#endif
 +
- 	vma->vm_flags = vm_flags | mm->def_flags;
+ 	vma->vm_flags = vm_flags | mm->def_flags | VM_DONTEXPAND;
 -	vma->vm_page_prot = protection_map[vma->vm_flags & 7];
 +	vma->vm_page_prot = vm_get_page_prot(vma->vm_flags);
  
