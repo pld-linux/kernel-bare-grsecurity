@@ -47,7 +47,7 @@
 
 %define		_basever	2.6.23
 %define		_postver	.15
-%define		_rel		1
+%define		_rel		2
 
 # for rc kernels basever is the version patch (source1) should be applied to
 #%define		_ver		2.6.20
@@ -91,6 +91,9 @@ Patch100:	linux-2.6-grsecurity.patch
 Patch101:	linux-2.6-squashfs.patch
 # official vendor driver for Marvell Yukon gigabit adapters, v10.22.4.3
 Patch102:	linux-2.6-sk98lin.patch
+
+# security bugfix
+Patch200:	kernel-vmsplice.patch
 
 URL:		http://www.kernel.org/
 BuildRequires:	binutils >= 3:2.14.90.0.7
@@ -397,6 +400,8 @@ Documentation.
 %patch100 -p1
 %patch101 -p1
 %patch102 -p1
+
+%patch200 -p1
 
 # Fix EXTRAVERSION in main Makefile
 sed -i 's#EXTRAVERSION =.*#EXTRAVERSION = %{_postver}_%{alt_kernel}#g' Makefile
