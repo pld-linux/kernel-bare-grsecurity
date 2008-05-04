@@ -24,7 +24,7 @@
 %endif
 
 %define		_basever	2.6.24
-%define		_postver	.5
+%define		_postver	.6
 %define		_rel		1
 
 #%define		_ver		2.6.20
@@ -46,7 +46,7 @@ Source0:	http://www.kernel.org/pub/linux/kernel/v2.6/linux-%{_basever}.tar.bz2
 # Source0-md5:	3f23ad4b69d0a552042d1ed0f4399857
 %if "%{_postver}" != "%{nil}"
 Source1:	http://www.kernel.org/pub/linux/kernel/v2.6/patch-%{_basever}%{_postver}.bz2
-# Source1-md5:	e937c732891561f0a34a2e0853df825e
+# Source1-md5:	6c93ad526ccb10632ced0d37fa8e0ee5
 %endif
 %if "%{_ver}" != "%{nil}"
 Source10:	http://www.kernel.org/pub/linux/kernel/v2.6/testing/patch-%{_ver}-%{_rc}.bz2
