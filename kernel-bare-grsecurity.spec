@@ -17,15 +17,11 @@
 
 %define		have_sound	1
 
-%if %{with pax}
-%define		alt_kernel	bare-pax-grsecurity
-%else
-%define		alt_kernel	bare-grsecurity
-%endif
+%define		alt_kernel	bare%{?with_pax:-pax}-grsecurity%{?with_pae:-pae}
 
 %define		_basever	2.6.24
 %define		_postver	.6
-%define		_rel		1
+%define		_rel		2
 
 #%define		_ver		2.6.20
 #%define		_rc		rc4
