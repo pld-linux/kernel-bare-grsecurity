@@ -20,8 +20,8 @@
 %define		alt_kernel	bare%{?with_pax:-pax}-grsecurity%{?with_pae:-pae}
 
 %define		_basever	2.6.24
-%define		_postver	.6
-%define		_rel		2
+%define		_postver	.7
+%define		_rel		1
 
 #%define		_ver		2.6.20
 #%define		_rc		rc4
@@ -42,7 +42,7 @@ Source0:	http://www.kernel.org/pub/linux/kernel/v2.6/linux-%{_basever}.tar.bz2
 # Source0-md5:	3f23ad4b69d0a552042d1ed0f4399857
 %if "%{_postver}" != "%{nil}"
 Source1:	http://www.kernel.org/pub/linux/kernel/v2.6/patch-%{_basever}%{_postver}.bz2
-# Source1-md5:	6c93ad526ccb10632ced0d37fa8e0ee5
+# Source1-md5:	0c1c5d6d8cd82e18d62406d2f34d1d38
 %endif
 %if "%{_ver}" != "%{nil}"
 Source10:	http://www.kernel.org/pub/linux/kernel/v2.6/testing/patch-%{_ver}-%{_rc}.bz2
