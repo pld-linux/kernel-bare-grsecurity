@@ -23,18 +23,13 @@
 %define		_postver	.7
 %define		_rel		1
 
-#%define		_ver		2.6.20
-#%define		_rc		rc4
-%define		_ver		%{nil}
-%define		_rc		%{nil}
-
 Summary:	The Linux kernel (the core of the Linux operating system)
 Summary(de):	Der Linux-Kernel (Kern des Linux-Betriebssystems)
 Summary(fr):	Le Kernel-Linux (La partie centrale du systeme)
 Summary(pl):	J±dro Linuksa
 Name:		kernel-%{alt_kernel}
-Version:	%{?_ver:%{_ver}}%{_basever}%{_postver}
-Release:	%{?_rc:%{_rc}}%{_rel}
+Version:	%{_basever}%{_postver}
+Release:	%{_rel}
 Epoch:		3
 License:	GPL v2
 Group:		Base/Kernel
@@ -43,10 +38,6 @@ Source0:	http://www.kernel.org/pub/linux/kernel/v2.6/linux-%{_basever}.tar.bz2
 %if "%{_postver}" != "%{nil}"
 Source1:	http://www.kernel.org/pub/linux/kernel/v2.6/patch-%{_basever}%{_postver}.bz2
 # Source1-md5:	0c1c5d6d8cd82e18d62406d2f34d1d38
-%endif
-%if "%{_ver}" != "%{nil}"
-Source10:	http://www.kernel.org/pub/linux/kernel/v2.6/testing/patch-%{_ver}-%{_rc}.bz2
-# Source10-md5:	9b325c6086ad2a3fcde643f01a4c4640
 %endif
 
 Source2:	kernel-bare-grsecurity-module-build.pl
@@ -61,8 +52,6 @@ Source30:	kernel-bare-grsecurity-pax.config
 Patch100:	linux-2.6-grsecurity.patch
 # from squashfs: http://dl.sourceforge.net/sourceforge/squashfs/squashfs3.3.tar.gz
 Patch101:	linux-2.6.24-squashfs.patch
-# official vendor driver for Marvell Yukon gigabit adapters
-Patch102:	linux-2.6.24-sk98lin.patch
 
 URL:		http://www.kernel.org/
 BuildRequires:	binutils >= 3:2.14.90.0.7
@@ -360,9 +349,6 @@ Documentation.
 
 %if "%{_postver}" != "%{nil}"
 %{__bzip2} -dc %{SOURCE1} | %{__patch} -p1 -s
-%endif
-%if "%{_ver}" != "%{nil}"
-%{__bzip2} -dc %{SOURCE10} | %{__patch} -p1 -s
 %endif
 
 %patch100 -p1
