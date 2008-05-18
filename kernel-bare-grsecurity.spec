@@ -19,9 +19,9 @@
 
 %define		alt_kernel	bare%{?with_pax:-pax}-grsecurity%{?with_pae:-pae}
 
-%define		_basever	2.6.24
-%define		_postver	.7
-%define		_rel		1
+%define		_basever	2.6.25
+%define		_postver	.4
+%define		_rel		0.1
 
 Summary:	The Linux kernel (the core of the Linux operating system)
 Summary(de):	Der Linux-Kernel (Kern des Linux-Betriebssystems)
@@ -34,10 +34,10 @@ Epoch:		3
 License:	GPL v2
 Group:		Base/Kernel
 Source0:	http://www.kernel.org/pub/linux/kernel/v2.6/linux-%{_basever}.tar.bz2
-# Source0-md5:	3f23ad4b69d0a552042d1ed0f4399857
+# Source0-md5:	db95a49a656a3247d4995a797d333153
 %if "%{_postver}" != "%{nil}"
 Source1:	http://www.kernel.org/pub/linux/kernel/v2.6/patch-%{_basever}%{_postver}.bz2
-# Source1-md5:	0c1c5d6d8cd82e18d62406d2f34d1d38
+# Source1-md5:	f12f43dd78b765f3d1402aa9d2170cf5
 %endif
 
 Source2:	kernel-bare-grsecurity-module-build.pl
@@ -51,7 +51,7 @@ Source30:	kernel-bare-grsecurity-pax.config
 # from http://www.grsecurity.net/~spender/
 Patch100:	linux-2.6-grsecurity.patch
 # from squashfs: http://dl.sourceforge.net/sourceforge/squashfs/squashfs3.3.tar.gz
-Patch101:	linux-2.6.24-squashfs.patch
+Patch101:	linux-2.6.25-squashfs.patch
 
 URL:		http://www.kernel.org/
 BuildRequires:	binutils >= 3:2.14.90.0.7
