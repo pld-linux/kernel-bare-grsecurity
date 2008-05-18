@@ -21,7 +21,7 @@
 
 %define		_basever	2.6.25
 %define		_postver	.4
-%define		_rel		0.1
+%define		_rel		1
 
 Summary:	The Linux kernel (the core of the Linux operating system)
 Summary(de):	Der Linux-Kernel (Kern des Linux-Betriebssystems)
@@ -87,7 +87,11 @@ Conflicts:	reiserfsprogs < 3.6.3
 Conflicts:	udev < 1:071
 Conflicts:	util-linux < 2.10o
 Conflicts:	xfsprogs < 2.6.0
+%if %{with pae}
+ExclusiveArch:	%{ix86}
+%else
 ExclusiveArch:	%{ix86} %{x8664}
+%endif
 ExclusiveOS:	Linux
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
