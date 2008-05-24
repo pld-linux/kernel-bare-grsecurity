@@ -27265,6 +27265,7 @@ diff -urNp linux-2.6.25.4/include/asm-x86/percpu.h linux-2.6.25.4/include/asm-x8
 +
  /* fs segment starts at (positive) offset == __per_cpu_offset[cpu] */
  #define __percpu_seg "%%fs:"
+ 
 diff -urNp linux-2.6.25.4/include/asm-x86/pgalloc_32.h linux-2.6.25.4/include/asm-x86/pgalloc_32.h
 --- linux-2.6.25.4/include/asm-x86/pgalloc_32.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-x86/pgalloc_32.h	2008-05-18 13:33:17.000000000 -0400
