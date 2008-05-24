@@ -9513,7 +9513,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  #ifdef CONFIG_X86_32
  static inline pmd_t *vmalloc_sync_one(pgd_t *pgd, unsigned long address)
  {
-@@ -380,17 +404,28 @@ static void show_fault_oops(struct pt_re
+@@ -380,17 +404,32 @@ static void show_fault_oops(struct pt_re
  #endif
  
  #ifdef CONFIG_X86_PAE
@@ -9537,14 +9537,18 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
 +#else
 +	if (init_mm.start_code <= address && address < init_mm.end_code)
 +#endif
-+		printk(KERN_ERR "PAX: %s:%d, uid/euid: %u/%u, attempted to modify kernel code\n",
++		if (current->signal->curr_ip)
++			printk(KERN_ERR "PAX: From %u.%u.%u.%u: %s:%d, uid/euid: %u/%u, attempted to modify kernel code\n",
++				 NIPQUAD(current->signal->curr_ip), current->comm, task_pid_nr(current), current->uid, current->euid);
++		else
++			printk(KERN_ERR "PAX: %s:%d, uid/euid: %u/%u, attempted to modify kernel code\n",
 +				 current->comm, task_pid_nr(current), current->uid, current->euid);
 +#endif
 +
  	printk(KERN_ALERT "BUG: unable to handle kernel ");
  	if (address < PAGE_SIZE)
  		printk(KERN_CONT "NULL pointer dereference");
-@@ -578,13 +613,22 @@ void __kprobes do_page_fault(struct pt_r
+@@ -578,13 +617,22 @@ void __kprobes do_page_fault(struct pt_r
  	struct task_struct *tsk;
  	struct mm_struct *mm;
  	struct vm_area_struct *vma;
@@ -9568,7 +9572,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  	/*
  	 * We can fault from pretty much anywhere, with unknown IRQ state.
  	 */
-@@ -594,9 +638,6 @@ void __kprobes do_page_fault(struct pt_r
+@@ -594,9 +642,6 @@ void __kprobes do_page_fault(struct pt_r
  	mm = tsk->mm;
  	prefetchw(&mm->mmap_sem);
  
@@ -9578,7 +9582,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  	si_code = SEGV_MAPERR;
  
  	if (notify_page_fault(regs))
-@@ -647,7 +688,7 @@ void __kprobes do_page_fault(struct pt_r
+@@ -647,7 +692,7 @@ void __kprobes do_page_fault(struct pt_r
  	 * atomic region then we must not take the fault.
  	 */
  	if (in_atomic() || !mm)
@@ -9587,7 +9591,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  #else /* CONFIG_X86_64 */
  	if (likely(regs->flags & X86_EFLAGS_IF))
  		local_irq_enable();
-@@ -660,13 +701,13 @@ void __kprobes do_page_fault(struct pt_r
+@@ -660,13 +705,13 @@ void __kprobes do_page_fault(struct pt_r
  	 * atomic region then we must not take the fault.
  	 */
  	if (unlikely(in_atomic() || !mm))
@@ -9603,7 +9607,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  		error_code |= PF_USER;
  again:
  #endif
-@@ -688,10 +729,104 @@ again:
+@@ -688,10 +733,104 @@ again:
  	if (!down_read_trylock(&mm->mmap_sem)) {
  		if ((error_code & PF_USER) == 0 &&
  		    !search_exception_tables(regs->ip))
@@ -9709,7 +9713,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  	vma = find_vma(mm, address);
  	if (!vma)
  		goto bad_area;
-@@ -709,6 +844,12 @@ again:
+@@ -709,6 +848,12 @@ again:
  		if (address + 65536 + 32 * sizeof(unsigned long) < regs->sp)
  			goto bad_area;
  	}
@@ -9722,7 +9726,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  	if (expand_stack(vma, address))
  		goto bad_area;
  /*
-@@ -718,6 +859,8 @@ again:
+@@ -718,6 +863,8 @@ again:
  good_area:
  	si_code = SEGV_ACCERR;
  	write = 0;
@@ -9731,7 +9735,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  	switch (error_code & (PF_PROT|PF_WRITE)) {
  	default:	/* 3: write, present */
  		/* fall through */
-@@ -775,6 +918,49 @@ bad_area:
+@@ -775,6 +922,49 @@ bad_area:
  	up_read(&mm->mmap_sem);
  
  bad_area_nosemaphore:
@@ -9781,7 +9785,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  	/* User mode accesses just cause a SIGSEGV */
  	if (error_code & PF_USER) {
  		/*
-@@ -857,7 +1043,7 @@ no_context:
+@@ -857,7 +1047,7 @@ no_context:
  #ifdef CONFIG_X86_32
  	die("Oops", regs, error_code);
  	bust_spinlocks(0);
@@ -9790,7 +9794,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  #else
  	if (__die("Oops", regs, error_code))
  		regs = NULL;
-@@ -871,17 +1057,17 @@ no_context:
+@@ -871,17 +1061,17 @@ no_context:
   * us unable to handle the page fault gracefully.
   */
  out_of_memory:
@@ -9810,7 +9814,7 @@ diff -urNp linux-2.6.25.4/arch/x86/mm/fault.c linux-2.6.25.4/arch/x86/mm/fault.c
  	printk("VM: killing process %s\n", tsk->comm);
  	if (error_code & PF_USER)
  		do_group_exit(SIGKILL);
-@@ -982,3 +1168,181 @@ void vmalloc_sync_all(void)
+@@ -982,3 +1172,181 @@ void vmalloc_sync_all(void)
  				(__START_KERNEL & PGDIR_MASK)));
  #endif
  }
@@ -13936,7 +13940,19 @@ diff -urNp linux-2.6.25.4/fs/binfmt_elf.c linux-2.6.25.4/fs/binfmt_elf.c
  /*
   * These are the functions used to load ELF style executables and shared
   * libraries.  There is no binary dependent code anywhere else.
-@@ -533,7 +717,7 @@ static int load_elf_binary(struct linux_
+@@ -515,6 +697,11 @@ static unsigned long randomize_stack_top
+ {
+ 	unsigned int random_variable = 0;
+ 
++#ifdef CONFIG_PAX_RANDUSTACK
++	if (randomize_va_space)
++		return stack_top - current->mm->delta_stack;
++#endif
++
+ 	if ((current->flags & PF_RANDOMIZE) &&
+ 		!(current->personality & ADDR_NO_RANDOMIZE)) {
+ 		random_variable = get_random_int() & STACK_RND_MASK;
+@@ -533,7 +720,7 @@ static int load_elf_binary(struct linux_
   	unsigned long load_addr = 0, load_bias = 0;
  	int load_addr_set = 0;
  	char * elf_interpreter = NULL;
@@ -13945,7 +13961,7 @@ diff -urNp linux-2.6.25.4/fs/binfmt_elf.c linux-2.6.25.4/fs/binfmt_elf.c
  	struct elf_phdr *elf_ppnt, *elf_phdata;
  	unsigned long elf_bss, elf_brk;
  	int elf_exec_fileno;
-@@ -545,12 +729,12 @@ static int load_elf_binary(struct linux_
+@@ -545,12 +732,12 @@ static int load_elf_binary(struct linux_
  	unsigned long reloc_func_desc = 0;
  	struct files_struct *files;
  	int executable_stack = EXSTACK_DEFAULT;
@@ -13959,7 +13975,7 @@ diff -urNp linux-2.6.25.4/fs/binfmt_elf.c linux-2.6.25.4/fs/binfmt_elf.c
  
  	loc = kmalloc(sizeof(*loc), GFP_KERNEL);
  	if (!loc) {
-@@ -736,7 +920,73 @@ static int load_elf_binary(struct linux_
+@@ -736,7 +923,73 @@ static int load_elf_binary(struct linux_
  
  	/* OK, This is the point of no return */
  	current->flags &= ~PF_FORKNOEXEC;
@@ -14034,7 +14050,7 @@ diff -urNp linux-2.6.25.4/fs/binfmt_elf.c linux-2.6.25.4/fs/binfmt_elf.c
  
  	/* Do this immediately, since STACK_TOP as used in setup_arg_pages
  	   may depend on the personality.  */
-@@ -821,6 +1071,20 @@ static int load_elf_binary(struct linux_
+@@ -821,6 +1074,20 @@ static int load_elf_binary(struct linux_
  #else
  			load_bias = ELF_PAGESTART(ELF_ET_DYN_BASE - vaddr);
  #endif
@@ -14055,7 +14071,7 @@ diff -urNp linux-2.6.25.4/fs/binfmt_elf.c linux-2.6.25.4/fs/binfmt_elf.c
  		}
  
  		error = elf_map(bprm->file, load_bias + vaddr, elf_ppnt,
-@@ -853,9 +1117,9 @@ static int load_elf_binary(struct linux_
+@@ -853,9 +1120,9 @@ static int load_elf_binary(struct linux_
  		 * allowed task size. Note that p_filesz must always be
  		 * <= p_memsz so it is only necessary to check p_memsz.
  		 */
@@ -14068,7 +14084,7 @@ diff -urNp linux-2.6.25.4/fs/binfmt_elf.c linux-2.6.25.4/fs/binfmt_elf.c
  			/* set_brk can never work. Avoid overflows. */
  			send_sig(SIGKILL, current, 0);
  			retval = -EINVAL;
-@@ -883,6 +1147,11 @@ static int load_elf_binary(struct linux_
+@@ -883,6 +1150,11 @@ static int load_elf_binary(struct linux_
  	start_data += load_bias;
  	end_data += load_bias;
  
@@ -14080,7 +14096,7 @@ diff -urNp linux-2.6.25.4/fs/binfmt_elf.c linux-2.6.25.4/fs/binfmt_elf.c
  	/* Calling set_brk effectively mmaps the pages that we need
  	 * for the bss and break sections.  We must do this before
  	 * mapping in the interpreter, to make sure it doesn't wind
-@@ -894,9 +1163,11 @@ static int load_elf_binary(struct linux_
+@@ -894,9 +1166,11 @@ static int load_elf_binary(struct linux_
  		goto out_free_dentry;
  	}
  	if (likely(elf_bss != elf_brk) && unlikely(padzero(elf_bss))) {
@@ -14095,7 +14111,7 @@ diff -urNp linux-2.6.25.4/fs/binfmt_elf.c linux-2.6.25.4/fs/binfmt_elf.c
  	}
  
  	if (elf_interpreter) {
-@@ -1142,8 +1413,10 @@ static int dump_seek(struct file *file, 
+@@ -1142,8 +1416,10 @@ static int dump_seek(struct file *file, 
  			unsigned long n = off;
  			if (n > PAGE_SIZE)
  				n = PAGE_SIZE;
@@ -14107,7 +14123,7 @@ diff -urNp linux-2.6.25.4/fs/binfmt_elf.c linux-2.6.25.4/fs/binfmt_elf.c
  			off -= n;
  		}
  		free_page((unsigned long)buf);
-@@ -1155,7 +1428,7 @@ static int dump_seek(struct file *file, 
+@@ -1155,7 +1431,7 @@ static int dump_seek(struct file *file, 
   * Decide what to dump of a segment, part, all or none.
   */
  static unsigned long vma_dump_size(struct vm_area_struct *vma,
@@ -14116,7 +14132,7 @@ diff -urNp linux-2.6.25.4/fs/binfmt_elf.c linux-2.6.25.4/fs/binfmt_elf.c
  {
  	/* The vma can be set up to tell us the answer directly.  */
  	if (vma->vm_flags & VM_ALWAYSDUMP)
-@@ -1181,7 +1454,7 @@ static unsigned long vma_dump_size(struc
+@@ -1181,7 +1457,7 @@ static unsigned long vma_dump_size(struc
  	if (vma->vm_file == NULL)
  		return 0;
  
@@ -25879,18 +25895,6 @@ diff -urNp linux-2.6.25.4/include/asm-alpha/pgtable.h linux-2.6.25.4/include/asm
  #define PAGE_KERNEL	__pgprot(_PAGE_VALID | _PAGE_ASM | _PAGE_KRE | _PAGE_KWE)
  
  #define _PAGE_NORMAL(x) __pgprot(_PAGE_VALID | __ACCESS_BITS | (x))
-diff -urNp linux-2.6.25.4/include/asm-alpha/processor.h linux-2.6.25.4/include/asm-alpha/processor.h
---- linux-2.6.25.4/include/asm-alpha/processor.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-alpha/processor.h	2008-05-18 13:33:17.000000000 -0400
-@@ -20,7 +20,7 @@
-  */
- #define TASK_SIZE (0x40000000000UL)
- 
--#define STACK_TOP \
-+#define __STACK_TOP \
-   (current->personality & ADDR_LIMIT_32BIT ? 0x80000000 : 0x00120000000UL)
- 
- #define STACK_TOP_MAX	0x00120000000UL
 diff -urNp linux-2.6.25.4/include/asm-arm/elf.h linux-2.6.25.4/include/asm-arm/elf.h
 --- linux-2.6.25.4/include/asm-arm/elf.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-arm/elf.h	2008-05-18 13:33:17.000000000 -0400
@@ -25921,18 +25925,6 @@ diff -urNp linux-2.6.25.4/include/asm-arm/kmap_types.h linux-2.6.25.4/include/as
  	KM_TYPE_NR
  };
  
-diff -urNp linux-2.6.25.4/include/asm-arm/processor.h linux-2.6.25.4/include/asm-arm/processor.h
---- linux-2.6.25.4/include/asm-arm/processor.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-arm/processor.h	2008-05-18 13:33:17.000000000 -0400
-@@ -23,7 +23,7 @@
- #include <asm/types.h>
- 
- #ifdef __KERNEL__
--#define STACK_TOP	((current->personality == PER_LINUX_32BIT) ? \
-+#define __STACK_TOP	((current->personality == PER_LINUX_32BIT) ? \
- 			 TASK_SIZE : TASK_SIZE_26)
- #define STACK_TOP_MAX	TASK_SIZE
- #endif
 diff -urNp linux-2.6.25.4/include/asm-avr32/elf.h linux-2.6.25.4/include/asm-avr32/elf.h
 --- linux-2.6.25.4/include/asm-avr32/elf.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-avr32/elf.h	2008-05-18 13:33:17.000000000 -0400
@@ -25965,20 +25957,6 @@ diff -urNp linux-2.6.25.4/include/asm-avr32/kmap_types.h linux-2.6.25.4/include/
  };
  
  #undef D
-diff -urNp linux-2.6.25.4/include/asm-avr32/processor.h linux-2.6.25.4/include/asm-avr32/processor.h
---- linux-2.6.25.4/include/asm-avr32/processor.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-avr32/processor.h	2008-05-18 13:33:17.000000000 -0400
-@@ -14,8 +14,8 @@
- #define TASK_SIZE	0x80000000
- 
- #ifdef __KERNEL__
--#define STACK_TOP	TASK_SIZE
--#define STACK_TOP_MAX	STACK_TOP
-+#define __STACK_TOP	TASK_SIZE
-+#define STACK_TOP_MAX	__STACK_TOP
- #endif
- 
- #ifndef __ASSEMBLY__
 diff -urNp linux-2.6.25.4/include/asm-blackfin/kmap_types.h linux-2.6.25.4/include/asm-blackfin/kmap_types.h
 --- linux-2.6.25.4/include/asm-blackfin/kmap_types.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-blackfin/kmap_types.h	2008-05-18 13:33:17.000000000 -0400
@@ -26105,32 +26083,6 @@ diff -urNp linux-2.6.25.4/include/asm-ia64/pgtable.h linux-2.6.25.4/include/asm-
  #define PAGE_GATE	__pgprot(__ACCESS_BITS | _PAGE_PL_0 | _PAGE_AR_X_RX)
  #define PAGE_KERNEL	__pgprot(__DIRTY_BITS  | _PAGE_PL_0 | _PAGE_AR_RWX)
  #define PAGE_KERNELRX	__pgprot(__ACCESS_BITS | _PAGE_PL_0 | _PAGE_AR_RX)
-diff -urNp linux-2.6.25.4/include/asm-ia64/processor.h linux-2.6.25.4/include/asm-ia64/processor.h
---- linux-2.6.25.4/include/asm-ia64/processor.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-ia64/processor.h	2008-05-18 13:33:17.000000000 -0400
-@@ -276,7 +276,7 @@ struct thread_struct {
- 	.on_ustack =	0,					\
- 	.ksp =		0,					\
- 	.map_base =	DEFAULT_MAP_BASE,			\
--	.rbs_bot =	STACK_TOP - DEFAULT_USER_STACK_SIZE,	\
-+	.rbs_bot =	__STACK_TOP - DEFAULT_USER_STACK_SIZE,	\
- 	.task_size =	DEFAULT_TASK_SIZE,			\
- 	.last_fph_cpu =  -1,					\
- 	INIT_THREAD_IA32					\
-diff -urNp linux-2.6.25.4/include/asm-ia64/ustack.h linux-2.6.25.4/include/asm-ia64/ustack.h
---- linux-2.6.25.4/include/asm-ia64/ustack.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-ia64/ustack.h	2008-05-18 13:33:17.000000000 -0400
-@@ -10,8 +10,8 @@
- 
- /* The absolute hard limit for stack size is 1/2 of the mappable space in the region */
- #define MAX_USER_STACK_SIZE	(RGN_MAP_LIMIT/2)
--#define STACK_TOP		(0x6000000000000000UL + RGN_MAP_LIMIT)
--#define STACK_TOP_MAX		STACK_TOP
-+#define __STACK_TOP		(0x6000000000000000UL + RGN_MAP_LIMIT)
-+#define STACK_TOP_MAX		__STACK_TOP
- #endif
- 
- /* Make a default stack size of 2GiB */
 diff -urNp linux-2.6.25.4/include/asm-m32r/kmap_types.h linux-2.6.25.4/include/asm-m32r/kmap_types.h
 --- linux-2.6.25.4/include/asm-m32r/kmap_types.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-m32r/kmap_types.h	2008-05-18 13:33:17.000000000 -0400
@@ -26206,27 +26158,6 @@ diff -urNp linux-2.6.25.4/include/asm-mips/page.h linux-2.6.25.4/include/asm-mip
    #else
       typedef struct { unsigned long long pte; } pte_t;
       #define pte_val(x)	((x).pte)
-diff -urNp linux-2.6.25.4/include/asm-mips/processor.h linux-2.6.25.4/include/asm-mips/processor.h
---- linux-2.6.25.4/include/asm-mips/processor.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-mips/processor.h	2008-05-18 13:33:17.000000000 -0400
-@@ -39,7 +39,7 @@ extern unsigned int vced_count, vcei_cou
-  * so don't change it unless you know what you are doing.
-  */
- #define TASK_SIZE	0x7fff8000UL
--#define STACK_TOP	TASK_SIZE
-+#define __STACK_TOP	TASK_SIZE
- 
- /*
-  * This decides where the kernel will search for a free chunk of vm
-@@ -58,7 +58,7 @@ extern unsigned int vced_count, vcei_cou
-  */
- #define TASK_SIZE32	0x7fff8000UL
- #define TASK_SIZE	0x10000000000UL
--#define STACK_TOP	\
-+#define __STACK_TOP	\
-       (test_thread_flag(TIF_32BIT_ADDR) ? TASK_SIZE32 : TASK_SIZE)
- 
- /*
 diff -urNp linux-2.6.25.4/include/asm-mips/system.h linux-2.6.25.4/include/asm-mips/system.h
 --- linux-2.6.25.4/include/asm-mips/system.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-mips/system.h	2008-05-18 13:33:17.000000000 -0400
@@ -26289,18 +26220,6 @@ diff -urNp linux-2.6.25.4/include/asm-parisc/pgtable.h linux-2.6.25.4/include/as
  #define PAGE_KERNEL	__pgprot(_PAGE_KERNEL)
  #define PAGE_KERNEL_RO	__pgprot(_PAGE_KERNEL & ~_PAGE_WRITE)
  #define PAGE_KERNEL_UNC	__pgprot(_PAGE_KERNEL | _PAGE_NO_CACHE)
-diff -urNp linux-2.6.25.4/include/asm-parisc/processor.h linux-2.6.25.4/include/asm-parisc/processor.h
---- linux-2.6.25.4/include/asm-parisc/processor.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-parisc/processor.h	2008-05-18 13:33:17.000000000 -0400
-@@ -52,7 +52,7 @@
- /* XXX: STACK_TOP actually should be STACK_BOTTOM for parisc.
-  * prumpf */
- 
--#define STACK_TOP	TASK_SIZE
-+#define __STACK_TOP	TASK_SIZE
- #define STACK_TOP_MAX	DEFAULT_TASK_SIZE
- 
- #endif
 diff -urNp linux-2.6.25.4/include/asm-powerpc/elf.h linux-2.6.25.4/include/asm-powerpc/elf.h
 --- linux-2.6.25.4/include/asm-powerpc/elf.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-powerpc/elf.h	2008-05-18 13:33:17.000000000 -0400
@@ -26373,28 +26292,6 @@ diff -urNp linux-2.6.25.4/include/asm-powerpc/page.h linux-2.6.25.4/include/asm-
  
  #define VM_DATA_DEFAULT_FLAGS64	(VM_READ | VM_WRITE | \
  				 VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC)
-diff -urNp linux-2.6.25.4/include/asm-powerpc/processor.h linux-2.6.25.4/include/asm-powerpc/processor.h
---- linux-2.6.25.4/include/asm-powerpc/processor.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-powerpc/processor.h	2008-05-18 13:33:17.000000000 -0400
-@@ -119,15 +119,15 @@ extern struct task_struct *last_task_use
- #define STACK_TOP_USER64 TASK_SIZE_USER64
- #define STACK_TOP_USER32 TASK_SIZE_USER32
- 
--#define STACK_TOP (test_thread_flag(TIF_32BIT) ? \
-+#define __STACK_TOP (test_thread_flag(TIF_32BIT) ? \
- 		   STACK_TOP_USER32 : STACK_TOP_USER64)
- 
- #define STACK_TOP_MAX STACK_TOP_USER64
- 
- #else /* __powerpc64__ */
- 
--#define STACK_TOP TASK_SIZE
--#define STACK_TOP_MAX	STACK_TOP
-+#define __STACK_TOP TASK_SIZE
-+#define STACK_TOP_MAX	__STACK_TOP
- 
- #endif /* __powerpc64__ */
- #endif /* __KERNEL__ */
 diff -urNp linux-2.6.25.4/include/asm-ppc/mmu_context.h linux-2.6.25.4/include/asm-ppc/mmu_context.h
 --- linux-2.6.25.4/include/asm-ppc/mmu_context.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-ppc/mmu_context.h	2008-05-18 13:33:17.000000000 -0400
@@ -26560,32 +26457,6 @@ diff -urNp linux-2.6.25.4/include/asm-sparc/pgtsrmmu.h linux-2.6.25.4/include/as
  #define SRMMU_PAGE_KERNEL  __pgprot(SRMMU_VALID | SRMMU_CACHE | SRMMU_PRIV | \
  				    SRMMU_DIRTY | SRMMU_REF)
  
-diff -urNp linux-2.6.25.4/include/asm-sparc/processor.h linux-2.6.25.4/include/asm-sparc/processor.h
---- linux-2.6.25.4/include/asm-sparc/processor.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-sparc/processor.h	2008-05-18 13:33:17.000000000 -0400
-@@ -34,8 +34,8 @@
-  */
- #define TASK_SIZE	PAGE_OFFSET
- #ifdef __KERNEL__
--#define STACK_TOP	(PAGE_OFFSET - PAGE_SIZE)
--#define STACK_TOP_MAX	STACK_TOP
-+#define __STACK_TOP	(PAGE_OFFSET - PAGE_SIZE)
-+#define STACK_TOP_MAX	__STACK_TOP
- #endif /* __KERNEL__ */
- 
- struct task_struct;
-diff -urNp linux-2.6.25.4/include/asm-sparc/uaccess.h linux-2.6.25.4/include/asm-sparc/uaccess.h
---- linux-2.6.25.4/include/asm-sparc/uaccess.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-sparc/uaccess.h	2008-05-18 13:33:17.000000000 -0400
-@@ -40,7 +40,7 @@
-  * No one can read/write anything from userland in the kernel space by setting
-  * large size and address near to PAGE_OFFSET - a fault will break his intentions.
-  */
--#define __user_ok(addr, size) ({ (void)(size); (addr) < STACK_TOP; })
-+#define __user_ok(addr, size) ({ (void)(size); (addr) < __STACK_TOP; })
- #define __kernel_ok (segment_eq(get_fs(), KERNEL_DS))
- #define __access_ok(addr,size) (__user_ok((addr) & get_fs().seg,(size)))
- #define access_ok(type, addr, size)					\
 diff -urNp linux-2.6.25.4/include/asm-sparc64/elf.h linux-2.6.25.4/include/asm-sparc64/elf.h
 --- linux-2.6.25.4/include/asm-sparc64/elf.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-sparc64/elf.h	2008-05-18 13:33:17.000000000 -0400
@@ -26613,18 +26484,6 @@ diff -urNp linux-2.6.25.4/include/asm-sparc64/kmap_types.h linux-2.6.25.4/includ
  	KM_TYPE_NR
  };
  
-diff -urNp linux-2.6.25.4/include/asm-sparc64/processor.h linux-2.6.25.4/include/asm-sparc64/processor.h
---- linux-2.6.25.4/include/asm-sparc64/processor.h	2008-05-15 11:00:12.000000000 -0400
-+++ linux-2.6.25.4/include/asm-sparc64/processor.h	2008-05-18 13:33:17.000000000 -0400
-@@ -45,7 +45,7 @@
- #define STACK_TOP32	((1UL << 32UL) - PAGE_SIZE)
- #define STACK_TOP64	(0x0000080000000000UL - (1UL << 32UL))
- 
--#define STACK_TOP	(test_thread_flag(TIF_32BIT) ? \
-+#define __STACK_TOP	(test_thread_flag(TIF_32BIT) ? \
- 			 STACK_TOP32 : STACK_TOP64)
- 
- #define STACK_TOP_MAX	STACK_TOP64
 diff -urNp linux-2.6.25.4/include/asm-um/kmap_types.h linux-2.6.25.4/include/asm-um/kmap_types.h
 --- linux-2.6.25.4/include/asm-um/kmap_types.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-um/kmap_types.h	2008-05-18 13:33:17.000000000 -0400
@@ -27406,7 +27265,6 @@ diff -urNp linux-2.6.25.4/include/asm-x86/percpu.h linux-2.6.25.4/include/asm-x8
 +
  /* fs segment starts at (positive) offset == __per_cpu_offset[cpu] */
  #define __percpu_seg "%%fs:"
- 
 diff -urNp linux-2.6.25.4/include/asm-x86/pgalloc_32.h linux-2.6.25.4/include/asm-x86/pgalloc_32.h
 --- linux-2.6.25.4/include/asm-x86/pgalloc_32.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/asm-x86/pgalloc_32.h	2008-05-18 13:33:17.000000000 -0400
@@ -27698,17 +27556,16 @@ diff -urNp linux-2.6.25.4/include/asm-x86/processor.h linux-2.6.25.4/include/asm
   * User space process size: 3GB (default).
   */
  #define TASK_SIZE	(PAGE_OFFSET)
--#define STACK_TOP	TASK_SIZE
--#define STACK_TOP_MAX	STACK_TOP
 +
 +#ifdef CONFIG_PAX_SEGMEXEC
 +#define SEGMEXEC_TASK_SIZE	(TASK_SIZE / 2)
 +#endif
 +
 +#ifdef CONFIG_PAX_SEGMEXEC
-+#define __STACK_TOP	((current->mm->pax_flags & MF_PAX_SEGMEXEC)?SEGMEXEC_TASK_SIZE:TASK_SIZE)
++#define STACK_TOP	((current->mm->pax_flags & MF_PAX_SEGMEXEC)?SEGMEXEC_TASK_SIZE:TASK_SIZE)
 +#else
-+#define __STACK_TOP	TASK_SIZE
+ #define STACK_TOP	TASK_SIZE
+-#define STACK_TOP_MAX	STACK_TOP
 +#endif
 +#define STACK_TOP_MAX	TASK_SIZE
  
@@ -28080,24 +27937,7 @@ diff -urNp linux-2.6.25.4/include/asm-xtensa/kmap_types.h linux-2.6.25.4/include
 diff -urNp linux-2.6.25.4/include/linux/a.out.h linux-2.6.25.4/include/linux/a.out.h
 --- linux-2.6.25.4/include/linux/a.out.h	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/include/linux/a.out.h	2008-05-18 13:33:17.000000000 -0400
-@@ -9,6 +9,16 @@
- 
- #include <asm/a.out.h>
- 
-+#ifdef CONFIG_PAX_RANDUSTACK
-+#define __DELTA_STACK (current->mm->delta_stack)
-+#else
-+#define __DELTA_STACK 0UL
-+#endif
-+
-+#ifndef STACK_TOP
-+#define STACK_TOP	(__STACK_TOP - __DELTA_STACK)
-+#endif
-+
- #endif /* __STRUCT_EXEC_OVERRIDE__ */
- 
- #ifndef __ASSEMBLY__
-@@ -41,6 +51,14 @@ enum machine_type {
+@@ -41,6 +41,14 @@ enum machine_type {
    M_MIPS2 = 152		/* MIPS R6000/R4000 binary */
  };
  
@@ -30027,10 +29867,41 @@ diff -urNp linux-2.6.25.4/init/Kconfig linux-2.6.25.4/init/Kconfig
 diff -urNp linux-2.6.25.4/init/main.c linux-2.6.25.4/init/main.c
 --- linux-2.6.25.4/init/main.c	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/init/main.c	2008-05-18 13:33:17.000000000 -0400
-@@ -187,6 +187,17 @@ static int __init set_reset_devices(char
+@@ -101,6 +101,7 @@ static inline void mark_rodata_ro(void) 
+ #ifdef CONFIG_TC
+ extern void tc_init(void);
+ #endif
++extern void grsecurity_init(void);
+ 
+ enum system_states system_state;
+ EXPORT_SYMBOL(system_state);
+@@ -187,6 +187,40 @@ static int __init set_reset_devices(char
  
  __setup("reset_devices", set_reset_devices);
  
++#if defined(CONFIG_PAX_MEMORY_UDEREF) && defined(CONFIG_X86_32)
++static int __init setup_pax_nouderef(char *str)
++{
++	unsigned int cpu;
++
++#ifdef CONFIG_PAX_KERNEXEC
++	unsigned long cr0;
++
++	pax_open_kernel(cr0);
++#endif
++
++	for (cpu = 0; cpu < NR_CPUS; cpu++)
++		get_cpu_gdt_table(cpu)[GDT_ENTRY_KERNEL_DS].b = 0x00cf9300;
++
++#ifdef CONFIG_PAX_KERNEXEC
++	pax_close_kernel(cr0);
++#endif
++
++	return 1;
++}
++__setup("pax_nouderef", setup_pax_nouderef);
++#endif
++
 +#ifdef CONFIG_PAX_SOFTMODE
 +unsigned int pax_softmode;
 +
@@ -30045,7 +29916,7 @@ diff -urNp linux-2.6.25.4/init/main.c linux-2.6.25.4/init/main.c
  static char * argv_init[MAX_INIT_ARGS+2] = { "init", NULL, };
  char * envp_init[MAX_INIT_ENVS+2] = { "HOME=/", "TERM=linux", NULL, };
  static const char *panic_later, *panic_param;
-@@ -364,7 +375,7 @@ static inline void smp_prepare_cpus(unsi
+@@ -364,7 +398,7 @@ static inline void smp_prepare_cpus(unsi
  #else
  
  #ifndef CONFIG_HAVE_SETUP_PER_CPU_AREA
@@ -30054,7 +29925,7 @@ diff -urNp linux-2.6.25.4/init/main.c linux-2.6.25.4/init/main.c
  
  EXPORT_SYMBOL(__per_cpu_offset);
  
-@@ -668,7 +679,7 @@ static void __init do_initcalls(void)
+@@ -668,7 +702,7 @@ static void __init do_initcalls(void)
  
  	for (call = __initcall_start; call < __initcall_end; call++) {
  		ktime_t t0, t1, delta;
@@ -30063,7 +29934,7 @@ diff -urNp linux-2.6.25.4/init/main.c linux-2.6.25.4/init/main.c
  		char msgbuf[40];
  		int result;
  
-@@ -697,23 +708,23 @@ static void __init do_initcalls(void)
+@@ -697,23 +731,23 @@ static void __init do_initcalls(void)
  				(unsigned long) *call);
  		}
  
@@ -30095,6 +29966,15 @@ diff -urNp linux-2.6.25.4/init/main.c linux-2.6.25.4/init/main.c
  		}
  	}
  
+@@ -848,6 +860,8 @@ static int __init kernel_init(void * unu
+ 		prepare_namespace();
+ 	}
+ 
++	grsecurity_init();
++
+ 	/*
+ 	 * Ok, we have completed the initial bootup, and
+ 	 * we're essentially up and running. Get rid of the
 diff -urNp linux-2.6.25.4/init/noinitramfs.c linux-2.6.25.4/init/noinitramfs.c
 --- linux-2.6.25.4/init/noinitramfs.c	2008-05-15 11:00:12.000000000 -0400
 +++ linux-2.6.25.4/init/noinitramfs.c	2008-05-18 13:33:17.000000000 -0400
@@ -30792,7 +30672,16 @@ diff -urNp linux-2.6.25.4/kernel/module.c linux-2.6.25.4/kernel/module.c
  #include <linux/license.h>
  #include <asm/sections.h>
  
-@@ -344,6 +349,8 @@ static inline unsigned int block_size(in
+@@ -71,6 +76,8 @@ static DECLARE_WAIT_QUEUE_HEAD(module_wq
+ 
+ static BLOCKING_NOTIFIER_HEAD(module_notify_list);
+ 
++extern int gr_check_modstop(void);
++
+ int register_module_notifier(struct notifier_block * nb)
+ {
+ 	return blocking_notifier_chain_register(&module_notify_list, nb);
+@@ -344,6 +351,8 @@ static inline unsigned int block_size(in
  	return val;
  }
  
@@ -30801,7 +30690,7 @@ diff -urNp linux-2.6.25.4/kernel/module.c linux-2.6.25.4/kernel/module.c
  static void *percpu_modalloc(unsigned long size, unsigned long align,
  			     const char *name)
  {
-@@ -351,7 +358,7 @@ static void *percpu_modalloc(unsigned lo
+@@ -351,7 +360,7 @@ static void *percpu_modalloc(unsigned lo
  	unsigned int i;
  	void *ptr;
  
@@ -30822,6 +30711,16 @@ diff -urNp linux-2.6.25.4/kernel/module.c linux-2.6.25.4/kernel/module.c
  }
  
  static int percpu_modinit(void)
+@@ -684,6 +693,9 @@ sys_delete_module(const char __user *nam
+ 	char name[MODULE_NAME_LEN];
+ 	int ret, forced = 0;
+ 
++	if (gr_check_modstop())
++		return -EPERM;
++
+ 	if (!capable(CAP_SYS_MODULE))
+ 		return -EPERM;
+ 
 @@ -1347,16 +1358,19 @@ static void free_module(struct module *m
  	module_unload_free(mod);
  
@@ -31083,7 +30982,10 @@ diff -urNp linux-2.6.25.4/kernel/module.c linux-2.6.25.4/kernel/module.c
 +			else
 +				dest = mod->module_core_rx + sechdrs[i].sh_entsize;
 +		}
-+
+ 
+-		if (sechdrs[i].sh_type != SHT_NOBITS)
+-			memcpy(dest, (void *)sechdrs[i].sh_addr,
+-			       sechdrs[i].sh_size);
 +		if (sechdrs[i].sh_type != SHT_NOBITS) {
 +
 +#ifdef CONFIG_PAX_KERNEXEC
@@ -31093,10 +30995,7 @@ diff -urNp linux-2.6.25.4/kernel/module.c linux-2.6.25.4/kernel/module.c
 +				pax_close_kernel(cr0);
 +			} else
 +#endif
- 
--		if (sechdrs[i].sh_type != SHT_NOBITS)
--			memcpy(dest, (void *)sechdrs[i].sh_addr,
--			       sechdrs[i].sh_size);
++
 +			memcpy(dest, (void *)sechdrs[i].sh_addr, sechdrs[i].sh_size);
 +		}
  		/* Update sh_addr to point to copy in image. */
@@ -31148,6 +31047,16 @@ diff -urNp linux-2.6.25.4/kernel/module.c linux-2.6.25.4/kernel/module.c
   free_percpu:
  	if (percpu)
  		percpu_modfree(percpu);
+@@ -2142,6 +2277,9 @@ sys_init_module(void __user *umod,
+ 	struct module *mod;
+ 	int ret = 0;
+ 
++	if (gr_check_modstop())
++		return -EPERM;
++
+ 	/* Must have permission */
+ 	if (!capable(CAP_SYS_MODULE))
+ 		return -EPERM;
 @@ -2195,10 +2329,12 @@ sys_init_module(void __user *umod,
  	/* Drop initial reference. */
  	module_put(mod);
@@ -31802,7 +31711,7 @@ diff -urNp linux-2.6.25.4/kernel/sysctl.c linux-2.6.25.4/kernel/sysctl.c
  
  static struct ctl_table root_table[];
  static struct ctl_table_root sysctl_table_root;
-@@ -183,6 +191,21 @@ extern struct ctl_table inotify_table[];
+@@ -183,6 +183,21 @@ extern struct ctl_table inotify_table[];
  int sysctl_legacy_va_layout;
  #endif
  
