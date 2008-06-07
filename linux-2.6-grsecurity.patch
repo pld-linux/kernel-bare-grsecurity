@@ -29999,7 +29999,7 @@ diff -urNp linux-2.6.25.4/init/main.c linux-2.6.25.4/init/main.c
  		char msgbuf[40];
  		int result;
  
-@@ -697,23 +732,23 @@ static void __init do_initcalls(void)
+@@ -697,23 +732,22 @@ static void __init do_initcalls(void)
  				(unsigned long) *call);
  		}
  
