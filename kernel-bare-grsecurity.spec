@@ -55,8 +55,8 @@ Source12:	kernel-bare-grsecurity-pax.config
 
 # from http://www.grsecurity.net/~spender/
 Patch100:	linux-2.6-grsecurity.patch
-# from squashfs: http://dl.sourceforge.net/sourceforge/squashfs/squashfs3.3.tar.gz
-Patch101:	linux-2.6.25-squashfs.patch
+# from squashfs: http://dl.sourceforge.net/squashfs/squashfs3.4.tar.gz
+Patch101:	linux-2.6.27-squashfs.patch
 
 URL:		http://www.kernel.org/
 BuildRequires:	binutils >= 3:2.14.90.0.7
