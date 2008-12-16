@@ -15229,9 +15229,9 @@ diff -urNp linux-2.6.27.8/fs/fcntl.c linux-2.6.27.8/fs/fcntl.c
 --- linux-2.6.27.8/fs/fcntl.c	2008-11-07 12:55:34.000000000 -0500
 +++ linux-2.6.27.8/fs/fcntl.c	2008-11-18 03:38:45.000000000 -0500
 @@ -19,6 +19,7 @@
- #include <linux/signal.h>
  #include <linux/rcupdate.h>
  #include <linux/pid_namespace.h>
+ #include <linux/smp_lock.h>
 +#include <linux/grsecurity.h>
  
  #include <asm/poll.h>
@@ -36136,7 +36136,7 @@ diff -urNp linux-2.6.27.8/net/ipv4/udp.c linux-2.6.27.8/net/ipv4/udp.c
 +}
 +
 +
- static inline struct sock *udp_v4_mcast_next(struct sock *sk,
+ static inline struct sock *udp_v4_mcast_next(struct net *net, struct sock *sk,
  					     __be16 loc_port, __be32 loc_addr,
  					     __be16 rmt_port, __be32 rmt_addr,
 @@ -591,9 +604,16 @@ int udp_sendmsg(struct kiocb *iocb, stru
