@@ -14,8 +14,8 @@
 %define		have_isa	1
 
 %define		_basever		2.6.27
-%define		_postver		.15
-%define		_rel			2
+%define		_postver		.17
+%define		_rel			1
 
 %define		_enable_debug_packages			0
 
@@ -42,7 +42,7 @@ Source0:	http://www.kernel.org/pub/linux/kernel/v2.6/linux-%{_basever}.tar.bz2
 # Source0-md5:	b3e78977aa79d3754cb7f8143d7ddabd
 %if "%{_postver}" != "%{nil}"
 Source1:	http://www.kernel.org/pub/linux/kernel/v2.6/patch-%{version}.bz2
-# Source1-md5:	00a117113bb1e1b5d787fc860109cedd
+# Source1-md5:	be7ea4207f9303e9ce272e05ec323411
 %endif
 
 Source2:	kernel-bare-grsecurity-autoconf.h
