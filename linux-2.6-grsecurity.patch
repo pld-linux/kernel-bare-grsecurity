@@ -16646,18 +16646,18 @@ diff -urNp linux-2.6.27.10/fs/proc/array.c linux-2.6.27.10/fs/proc/array.c
  	/* scale priority and nice values from timeslices to -20..20 */
  	/* to make it look like a "normal" Unix priority/nice value  */
  	priority = task_prio(task);
-@@ -469,9 +508,15 @@ static int do_task_stat(struct seq_file 
+@@ -474,9 +513,15 @@ static int do_task_stat(struct seq_file 
  		vsize,
  		mm ? get_mm_rss(mm) : 0,
  		rsslim,
 +#ifdef CONFIG_GRKERNSEC_PROC_MEMMAP
 +		PAX_RAND_FLAGS(mm) ? 1 : (mm ? mm->start_code : 0),
 +		PAX_RAND_FLAGS(mm) ? 1 : (mm ? mm->end_code : 0),
-+		PAX_RAND_FLAGS(mm) ? 0 : (mm ? mm->start_stack : 0),
++		PAX_RAND_FLAGS(mm) ? 0 : ((permitted && mm) ? mm->start_stack : 0),
 +#else
  		mm ? mm->start_code : 0,
  		mm ? mm->end_code : 0,
- 		mm ? mm->start_stack : 0,
+ 		(permitted && mm) ? mm->start_stack : 0,
 +#endif
  		esp,
  		eip,
@@ -29148,9 +29148,9 @@ diff -urNp linux-2.6.27.10/include/drm/drm_pciids.h linux-2.6.27.10/include/drm/
  #define i915_PCI_IDS \
  	{0x8086, 0x3577, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0}, \
 @@ -412,4 +412,4 @@
- 	{0x8086, 0x2e02, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0}, \
  	{0x8086, 0x2e12, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0}, \
  	{0x8086, 0x2e22, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0}, \
+ 	{0x8086, 0x2e32, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0}, \
 -	{0, 0, 0}
 +	{0, 0, 0, 0, 0, 0}
 diff -urNp linux-2.6.27.10/include/linux/a.out.h linux-2.6.27.10/include/linux/a.out.h
