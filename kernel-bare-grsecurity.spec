@@ -15,7 +15,7 @@
 
 %define		_basever		2.6.27
 %define		_postver		.26
-%define		_rel			1
+%define		_rel			2
 
 %define		_enable_debug_packages			0
 
@@ -52,6 +52,8 @@ Source4:	kernel-bare-grsecurity-module-build.pl
 Source10:	kernel-bare-grsecurity-x86.config
 Source11:	kernel-bare-grsecurity-x86_64.config
 Source12:	kernel-bare-grsecurity-pax.config
+
+Patch10:	kernel-md_driver_fix.patch
 
 # from http://www.grsecurity.net/~spender/
 Patch100:	linux-2.6-grsecurity.patch
@@ -379,6 +381,8 @@ Pakiet zawiera dokumentację do jądra Linuksa pochodzącą z katalogu
 %if "%{_postver}" != "%{nil}"
 %{__bzip2} -dc %{SOURCE1} | patch -p1 -s
 %endif
+
+%patch10 -p1
 
 %patch100 -p1
 %patch101 -p1
