@@ -55,8 +55,6 @@ Source12:	kernel-bare-grsecurity-pax.config
 
 # from http://www.grsecurity.net/~spender/
 Patch100:	linux-2.6-grsecurity.patch
-# from squashfs: http://dl.sourceforge.net/squashfs/squashfs3.4.tar.gz
-Patch101:	linux-2.6.27-squashfs.patch
 
 URL:		http://www.kernel.org/
 BuildRequires:	binutils >= 3:2.18
@@ -381,7 +379,6 @@ Pakiet zawiera dokumentację do jądra Linuksa pochodzącą z katalogu
 %endif
 
 %patch100 -p1
-%patch101 -p1
 
 # Fix EXTRAVERSION in main Makefile
 sed -i 's#EXTRAVERSION =.*#EXTRAVERSION = %{_postver}-%{alt_kernel}#g' Makefile
