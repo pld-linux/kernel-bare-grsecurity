@@ -11153,7 +11153,7 @@ diff -urNp linux-2.6.30.4/arch/x86/kernel/vmi_32.c linux-2.6.30.4/arch/x86/kerne
  	vmi_ops.set_pte(pte, (pte_t *)pmd, VMI_PAGE_PD);
  }
  #endif
-@@ -438,10 +463,10 @@ vmi_startup_ipi_hook(int phys_apicid, un
+@@ -438,8 +463,8 @@ vmi_startup_ipi_hook(int phys_apicid, un
  	ap.ss = __KERNEL_DS;
  	ap.esp = (unsigned long) start_esp;
  
@@ -11162,10 +11162,7 @@ diff -urNp linux-2.6.30.4/arch/x86/kernel/vmi_32.c linux-2.6.30.4/arch/x86/kerne
 +	ap.ds = __KERNEL_DS;
 +	ap.es = __KERNEL_DS;
  	ap.fs = __KERNEL_PERCPU;
--	ap.gs = 0;
-+	ap.gs = __KERNEL_STACK_CANARY;
- 
- 	ap.eflags = 0;
+ 	ap.gs = __KERNEL_STACK_CANARY;
  
 @@ -634,12 +659,20 @@ static inline int __init activate_vmi(vo
  	u64 reloc;
@@ -38267,24 +38264,6 @@ diff -urNp linux-2.6.30.4/kernel/fork.c linux-2.6.30.4/kernel/fork.c
  #endif
  #endif
  
-@@ -571,7 +599,7 @@ void mm_release(struct task_struct *tsk,
- 	if (tsk->clear_child_tid
- 	    && !(tsk->flags & PF_SIGNALED)
- 	    && atomic_read(&mm->mm_users) > 1) {
--		u32 __user * tidptr = tsk->clear_child_tid;
-+		pid_t __user * tidptr = tsk->clear_child_tid;
- 		tsk->clear_child_tid = NULL;
- 
- 		/*
-@@ -579,7 +607,7 @@ void mm_release(struct task_struct *tsk,
- 		 * not set up a proper pointer then tough luck.
- 		 */
- 		put_user(0, tidptr);
--		sys_futex(tidptr, FUTEX_WAKE, 1, NULL, NULL, 0);
-+		sys_futex((u32 __user *)tidptr, FUTEX_WAKE, 1, NULL, NULL, 0);
- 	}
- }
- 
 @@ -695,7 +723,7 @@ static int copy_fs(unsigned long clone_f
  			write_unlock(&fs->lock);
  			return -EAGAIN;
@@ -43697,15 +43676,6 @@ diff -urNp linux-2.6.30.4/net/socket.c linux-2.6.30.4/net/socket.c
  
  static struct file_system_type sock_fs_type = {
  	.name =		"sockfs",
-@@ -736,7 +752,7 @@ static ssize_t sock_sendpage(struct file
- 	if (more)
- 		flags |= MSG_MORE;
- 
--	return sock->ops->sendpage(sock, page, offset, size, flags);
-+	return kernel_sendpage(sock, page, offset, size, flags);
- }
- 
- static ssize_t sock_splice_read(struct file *file, loff_t *ppos,
 @@ -1283,6 +1299,16 @@ SYSCALL_DEFINE3(socket, int, family, int
  	if (SOCK_NONBLOCK != O_NONBLOCK && (flags & SOCK_NONBLOCK))
  		flags = (flags & ~SOCK_NONBLOCK) | O_NONBLOCK;
