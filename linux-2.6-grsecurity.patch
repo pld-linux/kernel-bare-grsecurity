@@ -40444,14 +40444,6 @@ diff -urNp linux-2.6.31/kernel/perf_counter.c linux-2.6.31/kernel/perf_counter.c
  	.open		= perf_mmap_open,
  	.close		= perf_mmap_close,
  	.fault		= perf_mmap_fault,
-@@ -4171,6 +4171,7 @@ static int perf_copy_attr(struct perf_co
- 			if (val)
- 				goto err_size;
- 		}
-+		size = sizeof(*attr);
- 	}
- 
- 	ret = copy_from_user(attr, uattr, size);
 diff -urNp linux-2.6.31/kernel/pid.c linux-2.6.31/kernel/pid.c
 --- linux-2.6.31/kernel/pid.c	2009-09-09 18:13:59.000000000 -0400
 +++ linux-2.6.31/kernel/pid.c	2009-09-23 19:35:09.311686209 -0400
