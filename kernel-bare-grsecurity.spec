@@ -421,8 +421,8 @@ TuneUpConfigForIX86 () {
 }
 
 PaXconfig () {
-	sed -i "s:# CONFIG_PAX is not set:CONFIG_PAX=y:" .config
-	sed -i "s:# CONFIG_PAX_REFCOUNT is not set:CONFIG_PAX_REFCOUNT=y:" .config
+	sed -i "s:# CONFIG_PAX is not set:CONFIG_PAX=y:" %{defconfig}
+	sed -i "s:# CONFIG_PAX_REFCOUNT is not set:CONFIG_PAX_REFCOUNT=y:" %{defconfig}
 	%ifarch %{ix86}
 		sed -i 's:# CONFIG_PAX_SEGMEXEC is not set:CONFIG_PAX_SEGMEXEC=y:' $1
 	%endif
