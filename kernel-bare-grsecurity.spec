@@ -379,9 +379,6 @@ Pakiet zawiera dokumentację do jądra Linuksa pochodzącą z katalogu
 # Fix EXTRAVERSION in main Makefile
 sed -i 's#EXTRAVERSION =.*#EXTRAVERSION = %{_postver}-%{alt_kernel}#g' Makefile
 
-# on sparc this line causes CONFIG_INPUT=m (instead of =y), thus breaking build
-sed -i -e '/select INPUT/d' net/bluetooth/hidp/Kconfig
-
 # cleanup backups after patching
 find '(' -name '*~' -o -name '*.orig' -o -name '.gitignore' ')' -print0 | xargs -0 -r -l512 rm -f
 
